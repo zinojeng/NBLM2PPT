@@ -399,6 +399,11 @@
         let lastPdfFileName = "";
         let lastStep2PptxBlob = null; // 存儲 Step 2 生成的背景 PPTX blob
 
+        // Step 3 合併功能變數（提前宣告供 Step 1/2 使用）
+        let mergeTextFile = null;
+        let mergeBgFile = null;
+        let mergeDownloadUrl = null;
+
         function updateSelectedCount() {
             const count = selectedPdfPages.size;
             document.getElementById('selected-count-tag').textContent = `${count} SELECTED`;
@@ -840,10 +845,6 @@
         initSlots(4);
 
         // === Step 3: PPTX 合併功能 ===
-        let mergeTextFile = null;
-        let mergeBgFile = null;
-        let mergeDownloadUrl = null;
-
         const mergeTextDrop = document.getElementById('merge-text-drop');
         const mergeBgDrop = document.getElementById('merge-bg-drop');
         const mergeTextInput = document.getElementById('merge-text-input');
