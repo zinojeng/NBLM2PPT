@@ -34,8 +34,13 @@
         .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
        
-        .page-card { transition: all 0.2s ease; border: 2px solid transparent; }
+        .page-card { transition: all 0.2s ease; border: 2px solid transparent; position: relative; }
         .page-card:hover { transform: translateY(-3px); border-color: #3b82f6; }
+        .page-card.selected { border-color: #2563eb; background-color: #eff6ff; }
+        .page-card .select-check { position: absolute; top: 8px; left: 8px; width: 24px; height: 24px; border-radius: 50%; background: white; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s; }
+        .page-card.selected .select-check { background: #2563eb; border-color: #2563eb; }
+        .page-card .select-check svg { opacity: 0; }
+        .page-card.selected .select-check svg { opacity: 1; }
         .slot-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
        
         .waiting-badge { background: #64748b; color: white; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; }
@@ -113,9 +118,11 @@
                 </div>
                 <div id="pdf-preview-container" class="hidden text-left">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100 gap-4">
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-4 flex-wrap">
                             <span id="page-count-tag" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">0 PAGES</span>
-                            <span class="text-xs font-black text-slate-400">READY FOR ANALYSIS</span>
+                            <span id="selected-count-tag" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">0 SELECTED</span>
+                            <button id="select-all-btn" class="text-xs font-black text-blue-600 hover:text-blue-800 px-2">全選</button>
+                            <button id="deselect-all-btn" class="text-xs font-black text-slate-400 hover:text-slate-600 px-2">取消全選</button>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <!-- 備用下載按鈕 -->
@@ -372,9 +379,34 @@
         const toast = document.getElementById('toast');
         const backupPdfPptxBtn = document.getElementById('backup-pdf-pptx-btn');
         let currentPdfPageUrls = [];
+        let selectedPdfPages = new Set(); // 追蹤選取的頁面索引
         let slots = [];
         let lastGeneratedPdfPptx = null; // 存儲最後一次生成的 PPTX 物件
         let lastPdfFileName = "";
+
+        function updateSelectedCount() {
+            const count = selectedPdfPages.size;
+            document.getElementById('selected-count-tag').textContent = `${count} SELECTED`;
+        }
+
+        function selectAllPages() {
+            document.querySelectorAll('.page-card').forEach((card, i) => {
+                card.classList.add('selected');
+                selectedPdfPages.add(i);
+            });
+            updateSelectedCount();
+        }
+
+        function deselectAllPages() {
+            document.querySelectorAll('.page-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            selectedPdfPages.clear();
+            updateSelectedCount();
+        }
+
+        document.getElementById('select-all-btn').onclick = selectAllPages;
+        document.getElementById('deselect-all-btn').onclick = deselectAllPages;
         function showToast(msg, isError = false) {
             toast.textContent = msg;
             toast.style.backgroundColor = isError ? '#ef4444' : '#0f172a';
@@ -436,6 +468,7 @@
         async function processPdf(file) {
             showToast('正在解析 PDF 視覺佈局...');
             currentPdfPageUrls = [];
+            selectedPdfPages.clear();
             pdfPreviewContainer.classList.remove('hidden');
             pdfControls.classList.remove('hidden');
             pdfPagesList.innerHTML = '';
@@ -455,19 +488,40 @@
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                     const dataUrl = canvas.toDataURL('image/png');
                     currentPdfPageUrls.push(dataUrl);
+                    const pageIndex = i - 1;
                     const div = document.createElement('div');
-                    div.className = 'page-card bg-white p-2 rounded-2xl border border-slate-100 shadow-sm relative group cursor-grab custom-scrollbar';
+                    div.className = 'page-card bg-white p-2 rounded-2xl border border-slate-100 shadow-sm relative group cursor-pointer custom-scrollbar';
                     div.style.width = `${pdfZoomRange.value}px`;
+                    div.dataset.pageIndex = pageIndex;
                     div.innerHTML = `
+                        <div class="select-check">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
                         <div class="relative overflow-hidden rounded-xl">
                             <img src="${dataUrl}" class="w-full">
                             <button class="add-btn absolute top-2 right-2 bg-blue-600 text-white w-8 h-8 rounded-lg opacity-0 group-hover:opacity-100 transition shadow-xl font-black">＋</button>
                         </div>
                         <div class="text-[10px] font-black text-center mt-2 text-slate-400 uppercase tracking-widest">Page ${i}</div>
                     `;
+                    // 點擊頁面卡片切換選取狀態
+                    div.onclick = (e) => {
+                        if (e.target.closest('.add-btn')) return; // 排除 + 按鈕
+                        const idx = parseInt(div.dataset.pageIndex);
+                        if (selectedPdfPages.has(idx)) {
+                            selectedPdfPages.delete(idx);
+                            div.classList.remove('selected');
+                        } else {
+                            selectedPdfPages.add(idx);
+                            div.classList.add('selected');
+                        }
+                        updateSelectedCount();
+                    };
                     div.querySelector('.add-btn').onclick = (e) => { e.stopPropagation(); fillSlot(dataUrl); };
                     pdfPagesList.appendChild(div);
                 }
+                updateSelectedCount();
             } catch (err) { showToast('PDF 解析失敗', true); }
         }
         function setPptxLayout(pptx, ratio) {
@@ -483,6 +537,20 @@
         // 視覺還原 PPTX
         document.getElementById('pdf-to-pptx-btn').onclick = async () => {
             if (!checkApiKey()) return;
+
+            // 取得要處理的頁面（選取的頁面，如果沒有選取則處理全部）
+            let pagesToProcess = [];
+            if (selectedPdfPages.size > 0) {
+                pagesToProcess = Array.from(selectedPdfPages).sort((a, b) => a - b);
+            } else {
+                pagesToProcess = currentPdfPageUrls.map((_, i) => i);
+            }
+
+            if (pagesToProcess.length === 0) {
+                showToast('請先選取要處理的頁面', true);
+                return;
+            }
+
             const btn = document.getElementById('pdf-to-pptx-btn');
             const txt = document.getElementById('pptx-btn-text');
             const ldr = document.getElementById('pptx-loader');
@@ -490,9 +558,12 @@
             try {
                 const pptx = new PptxGenJS();
                 setPptxLayout(pptx, pdfRatioSelect.value);
-                for (let i = 0; i < currentPdfPageUrls.length; i++) {
-                    txt.textContent = `辨識中 (${i+1}/${currentPdfPageUrls.length})`;
-                    const base64 = currentPdfPageUrls[i].split(',')[1];
+
+                for (let idx = 0; idx < pagesToProcess.length; idx++) {
+                    const pageIndex = pagesToProcess[idx];
+                    const pageNum = pageIndex + 1;
+                    txt.textContent = `辨識中 (${idx+1}/${pagesToProcess.length}) - Page ${pageNum}`;
+                    const base64 = currentPdfPageUrls[pageIndex].split(',')[1];
                     const blocks = await callAiOcr(base64);
                     const slide = pptx.addSlide(); slide.background = { fill: "FFFFFF" };
                     if (blocks && Array.isArray(blocks) && blocks.length > 0) {
@@ -507,18 +578,18 @@
                                 bold: block.is_bold || false, align: block.align || 'left', valign: 'middle', margin: 0
                             });
                         });
-                        showToast(`第 ${i+1} 頁辨識到 ${blocks.length} 個文字塊`);
+                        showToast(`Page ${pageNum} 辨識到 ${blocks.length} 個文字塊`);
                     }
                     await wait(1800);
                 }
                 const name = `Restore_${lastPdfFileName || Date.now()}`;
                 pptx.writeFile({ fileName: `${name}.pptx` });
-               
+
                 // 保存備用下載
                 lastGeneratedPdfPptx = pptx;
                 backupPdfPptxBtn.classList.remove('hidden');
-               
-                showToast('PPTX 重建成功！');
+
+                showToast(`PPTX 重建成功！共 ${pagesToProcess.length} 頁`);
             } catch (err) {
                 console.error(err);
                 showToast(`辨識出錯: ${err.message}`, true);
@@ -690,6 +761,7 @@
         }
         document.getElementById('clear-pdf-btn').onclick = () => {
             pdfPagesList.innerHTML = ''; currentPdfPageUrls = [];
+            selectedPdfPages.clear();
             pdfPreviewContainer.classList.add('hidden'); pdfControls.classList.add('hidden');
             document.getElementById('pdf-empty-state').classList.remove('hidden');
             backupPdfPptxBtn.classList.add('hidden');
