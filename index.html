@@ -215,8 +215,10 @@
     <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl opacity-0 transition-all pointer-events-none z-50 text-sm font-black border border-slate-700"></div>
     <script>
         let apiKey = localStorage.getItem('gemini_api_key') || "";
-        const MODEL_OCR = "gemini-2.5-flash-preview-05-20";
-        const MODEL_IMAGE = "gemini-2.0-flash-exp";
+        // 用於 PDF 視覺還原 PPTX - 辨識圖片中的文字區塊位置與樣式
+        const MODEL_OCR = "gemini-3-flash-preview";
+        // 用於圖片去文字 - 移除圖片中的文字並填補背景
+        const MODEL_IMAGE = "gemini-2.5-flash-image";
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         // API Key 管理
