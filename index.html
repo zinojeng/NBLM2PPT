@@ -47,11 +47,27 @@
                 <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">AI 圖片文字移除 <span class="text-blue-600">PRO</span> BY 觀點LAB</h1>
                 <p class="text-slate-500 font-bold mt-2 text-lg">高精度佈局還原 & 智慧內容填補系統</p>
             </div>
-            <div class="text-right bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-                <span class="text-[10px] font-black text-slate-400 block uppercase tracking-widest">系統運行狀態</span>
-                <span class="text-xs font-black text-emerald-600 flex items-center justify-end gap-1">
-                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> 自動注入金鑰模式
-                </span>
+            <div class="flex items-center gap-4">
+                <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                    <label class="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Gemini API Key</label>
+                    <div class="flex items-center gap-2">
+                        <input type="password" id="api-key-input" placeholder="輸入你的 API Key..."
+                            class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none w-48 font-medium focus:border-blue-400 focus:ring-1 focus:ring-blue-100">
+                        <button id="toggle-key-visibility" class="text-slate-400 hover:text-slate-600 text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                        <button id="save-api-key-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[10px] font-black">儲存</button>
+                    </div>
+                </div>
+                <div id="api-status" class="text-right bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                    <span class="text-[10px] font-black text-slate-400 block uppercase tracking-widest">系統運行狀態</span>
+                    <span id="api-status-text" class="text-xs font-black text-red-500 flex items-center justify-end gap-1">
+                        <span id="api-status-dot" class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> 尚未設定 API Key
+                    </span>
+                </div>
             </div>
         </header>
         <!-- PDF 解析區 -->
@@ -198,10 +214,61 @@
     </template>
     <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl opacity-0 transition-all pointer-events-none z-50 text-sm font-black border border-slate-700"></div>
     <script>
-        const apiKey = ""; // 自動注入金鑰模式
-        const MODEL_OCR = "gemini-2.5-flash-preview-09-2025";
-        const MODEL_IMAGE = "gemini-2.5-flash-image-preview";
+        let apiKey = localStorage.getItem('gemini_api_key') || "";
+        const MODEL_OCR = "gemini-2.5-flash-preview-05-20";
+        const MODEL_IMAGE = "gemini-2.0-flash-exp";
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // API Key 管理
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+        const toggleKeyVisibility = document.getElementById('toggle-key-visibility');
+        const apiStatusText = document.getElementById('api-status-text');
+        const apiStatusDot = document.getElementById('api-status-dot');
+
+        function updateApiStatus() {
+            if (apiKey && apiKey.length > 10) {
+                apiStatusText.innerHTML = `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> API Key 已設定`;
+                apiStatusText.className = 'text-xs font-black text-emerald-600 flex items-center justify-end gap-1';
+            } else {
+                apiStatusText.innerHTML = `<span class="w-1.5 h-1.5 bg-red-500 rounded-full"></span> 尚未設定 API Key`;
+                apiStatusText.className = 'text-xs font-black text-red-500 flex items-center justify-end gap-1';
+            }
+        }
+
+        // 初始化時載入已儲存的 API Key
+        if (apiKey) {
+            apiKeyInput.value = apiKey;
+        }
+        updateApiStatus();
+
+        saveApiKeyBtn.onclick = () => {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                apiKey = key;
+                localStorage.setItem('gemini_api_key', key);
+                showToast('API Key 已儲存');
+                updateApiStatus();
+            } else {
+                showToast('請輸入有效的 API Key', true);
+            }
+        };
+
+        toggleKeyVisibility.onclick = () => {
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+            } else {
+                apiKeyInput.type = 'password';
+            }
+        };
+
+        function checkApiKey() {
+            if (!apiKey || apiKey.length < 10) {
+                showToast('請先設定 Gemini API Key', true);
+                return false;
+            }
+            return true;
+        }
         const pdfPagesList = document.getElementById('pdf-pages-list');
         const pdfPreviewContainer = document.getElementById('pdf-preview-container');
         const pdfControls = document.getElementById('pdf-controls');
@@ -336,6 +403,7 @@
         }
         // --- PPTX 視覺還原 ---
         document.getElementById('pdf-to-pptx-btn').onclick = async () => {
+            if (!checkApiKey()) return;
             const btn = document.getElementById('pdf-to-pptx-btn');
             const txt = document.getElementById('pptx-btn-text');
             const ldr = document.getElementById('pptx-loader');
@@ -464,6 +532,7 @@
         }
         async function processSlot(i) {
             const s = slots[i]; if (!s.originalBase64) return;
+            if (!checkApiKey()) return;
             s.loader.classList.remove('hidden');
             try {
                 const prompt = "Please remove all text from this image. Fill the gaps using the surrounding background texture to make it look clean and natural.";
@@ -487,6 +556,7 @@
             finally { s.loader.classList.add('hidden'); updateGlobalControls(); }
         }
         processAllBtn.onclick = async () => {
+            if (!checkApiKey()) return;
             const pending = slots.filter(s => s.originalBase64 && !s.resultImg.src.startsWith('data'));
             if (pending.length === 0) return;
             showToast(`佇列啟動：開始依序處理 ${pending.length} 張圖片...`);
