@@ -9,6 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- PptxGenJS (PPTX 生成) -->
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <!-- JSZip (PPTX 合併) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
@@ -179,6 +181,90 @@
                 </div>
             </div>
             <div id="slots-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </section>
+
+        <!-- PPTX 合併區 -->
+        <section class="mt-12">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-8 h-8 bg-purple-600 text-white rounded-lg flex items-center justify-center font-black">3</div>
+                <h2 class="text-xl font-black text-slate-800">PPTX 文字與背景合併</h2>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
+                <p class="text-slate-500 text-sm mb-6 text-center">將文字 PPTX（無背景）與背景 PPTX（無文字）合併成完整簡報</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center mb-8">
+                    <!-- 文字檔上傳 -->
+                    <div id="merge-text-drop" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center cursor-pointer hover:border-purple-400 transition-all group min-h-[180px] flex flex-col items-center justify-center">
+                        <input type="file" id="merge-text-input" class="hidden" accept=".pptx">
+                        <div id="merge-text-empty" class="flex flex-col items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-300 group-hover:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="text-sm font-black text-slate-600">1. 文字檔（無背景）</p>
+                            <p class="text-xs text-slate-400">點擊或拖放 .pptx</p>
+                        </div>
+                        <div id="merge-text-loaded" class="hidden flex flex-col items-center gap-2">
+                            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                            <p id="merge-text-name" class="text-sm font-bold text-slate-700 break-all max-w-full"></p>
+                        </div>
+                    </div>
+
+                    <!-- 箭頭 -->
+                    <div class="flex justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-300 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </div>
+
+                    <!-- 背景檔上傳 -->
+                    <div id="merge-bg-drop" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center cursor-pointer hover:border-purple-400 transition-all group min-h-[180px] flex flex-col items-center justify-center">
+                        <input type="file" id="merge-bg-input" class="hidden" accept=".pptx">
+                        <div id="merge-bg-empty" class="flex flex-col items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-300 group-hover:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                            </svg>
+                            <p class="text-sm font-black text-slate-600">2. 背景檔（無文字）</p>
+                            <p class="text-xs text-slate-400">點擊或拖放 .pptx</p>
+                        </div>
+                        <div id="merge-bg-loaded" class="hidden flex flex-col items-center gap-2">
+                            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                            <p id="merge-bg-name" class="text-sm font-bold text-slate-700 break-all max-w-full"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="flex flex-col items-center gap-4">
+                    <button id="merge-start-btn" disabled class="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg transition flex items-center gap-2">
+                        <span id="merge-btn-text">開始合併</span>
+                        <div id="merge-loader" class="loader !w-4 !h-4 !border-white !border-t-transparent hidden"></div>
+                    </button>
+                    <button id="merge-download-btn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl font-black text-xs shadow-lg transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        下載合併檔案
+                    </button>
+                    <button id="merge-reset-btn" class="hidden text-xs font-black text-slate-400 hover:text-red-500 transition">重置</button>
+                </div>
+
+                <!-- 處理日誌 -->
+                <div id="merge-log-container" class="hidden mt-6 bg-slate-900 rounded-xl p-4 font-mono text-xs max-h-40 overflow-y-auto">
+                    <div class="text-slate-400 mb-2 border-b border-slate-700 pb-1">處理日誌:</div>
+                    <div id="merge-logs"></div>
+                </div>
+
+                <!-- 提示 -->
+                <div class="mt-6 text-xs text-slate-400 bg-yellow-50 p-3 rounded-xl border border-yellow-100">
+                    <strong>提示：</strong> 合併後文字位置會保留原檔案設定。若背景設計不同，可能需要手動微調位置。所有操作皆在瀏覽器本地完成。
+                </div>
+            </div>
         </section>
     </div>
     <!-- 槽位模板 -->
@@ -621,6 +707,222 @@
             });
         };
         initSlots(4);
+
+        // === Step 3: PPTX 合併功能 ===
+        let mergeTextFile = null;
+        let mergeBgFile = null;
+        let mergeDownloadUrl = null;
+
+        const mergeTextDrop = document.getElementById('merge-text-drop');
+        const mergeBgDrop = document.getElementById('merge-bg-drop');
+        const mergeTextInput = document.getElementById('merge-text-input');
+        const mergeBgInput = document.getElementById('merge-bg-input');
+        const mergeStartBtn = document.getElementById('merge-start-btn');
+        const mergeDownloadBtn = document.getElementById('merge-download-btn');
+        const mergeResetBtn = document.getElementById('merge-reset-btn');
+        const mergeLogs = document.getElementById('merge-logs');
+        const mergeLogContainer = document.getElementById('merge-log-container');
+        const mergeLoader = document.getElementById('merge-loader');
+        const mergeBtnText = document.getElementById('merge-btn-text');
+
+        function addMergeLog(msg) {
+            mergeLogContainer.classList.remove('hidden');
+            const div = document.createElement('div');
+            div.className = 'text-green-400';
+            div.textContent = '> ' + msg;
+            mergeLogs.appendChild(div);
+            mergeLogs.scrollTop = mergeLogs.scrollHeight;
+        }
+
+        function updateMergeUI() {
+            // 文字檔
+            if (mergeTextFile) {
+                document.getElementById('merge-text-empty').classList.add('hidden');
+                document.getElementById('merge-text-loaded').classList.remove('hidden');
+                document.getElementById('merge-text-name').textContent = mergeTextFile.name;
+            } else {
+                document.getElementById('merge-text-empty').classList.remove('hidden');
+                document.getElementById('merge-text-loaded').classList.add('hidden');
+            }
+            // 背景檔
+            if (mergeBgFile) {
+                document.getElementById('merge-bg-empty').classList.add('hidden');
+                document.getElementById('merge-bg-loaded').classList.remove('hidden');
+                document.getElementById('merge-bg-name').textContent = mergeBgFile.name;
+            } else {
+                document.getElementById('merge-bg-empty').classList.remove('hidden');
+                document.getElementById('merge-bg-loaded').classList.add('hidden');
+            }
+            // 按鈕狀態
+            mergeStartBtn.disabled = !(mergeTextFile && mergeBgFile);
+        }
+
+        function setupMergeDrop(dropZone, inputEl, setFile) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+                dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
+            });
+            dropZone.addEventListener('dragover', () => dropZone.classList.add('drop-zone-active'));
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
+            dropZone.addEventListener('drop', e => {
+                dropZone.classList.remove('drop-zone-active');
+                const file = e.dataTransfer.files[0];
+                if (file && file.name.endsWith('.pptx')) {
+                    setFile(file);
+                    updateMergeUI();
+                } else {
+                    showToast('請上傳 .pptx 格式的檔案', true);
+                }
+            });
+            dropZone.onclick = () => inputEl.click();
+            inputEl.onchange = e => {
+                if (e.target.files[0]) {
+                    setFile(e.target.files[0]);
+                    updateMergeUI();
+                }
+            };
+        }
+
+        setupMergeDrop(mergeTextDrop, mergeTextInput, f => { mergeTextFile = f; });
+        setupMergeDrop(mergeBgDrop, mergeBgInput, f => { mergeBgFile = f; });
+
+        // 取得 spTree 元素
+        function getSpTree(doc) {
+            if (!doc) return null;
+            let tree = doc.getElementsByTagName("p:spTree")[0];
+            if (tree) return tree;
+            const all = doc.getElementsByTagName("*");
+            for (let i = 0; i < all.length; i++) {
+                if (all[i].localName === "spTree") return all[i];
+            }
+            return null;
+        }
+
+        // 合併處理
+        mergeStartBtn.onclick = async () => {
+            if (!mergeTextFile || !mergeBgFile) return;
+
+            mergeStartBtn.disabled = true;
+            mergeLoader.classList.remove('hidden');
+            mergeBtnText.textContent = '處理中...';
+            mergeLogs.innerHTML = '';
+            mergeLogContainer.classList.remove('hidden');
+
+            try {
+                const textZip = new JSZip();
+                const bgZip = new JSZip();
+
+                addMergeLog('讀取: 文字來源檔...');
+                const textContent = await textZip.loadAsync(mergeTextFile);
+
+                addMergeLog('讀取: 背景基底檔...');
+                const bgContent = await bgZip.loadAsync(mergeBgFile);
+
+                const textSlides = Object.keys(textContent.files).filter(p => p.match(/ppt\/slides\/slide\d+\.xml/));
+                const bgSlides = Object.keys(bgContent.files).filter(p => p.match(/ppt\/slides\/slide\d+\.xml/));
+
+                const sorter = (a, b) => {
+                    const getNum = str => { const m = str.match(/slide(\d+)\.xml/); return m ? parseInt(m[1]) : 0; };
+                    return getNum(a) - getNum(b);
+                };
+                textSlides.sort(sorter);
+                bgSlides.sort(sorter);
+
+                addMergeLog(`偵測: 文字檔 ${textSlides.length} 頁, 背景檔 ${bgSlides.length} 頁`);
+
+                const processCount = Math.min(textSlides.length, bgSlides.length);
+                const parser = new DOMParser();
+                const serializer = new XMLSerializer();
+
+                for (let i = 0; i < processCount; i++) {
+                    const textSlidePath = textSlides[i];
+                    const bgSlidePath = bgSlides[i];
+
+                    const textXmlStr = await textContent.file(textSlidePath).async("string");
+                    const bgXmlStr = await bgContent.file(bgSlidePath).async("string");
+
+                    const textDoc = parser.parseFromString(textXmlStr, "application/xml");
+                    const bgDoc = parser.parseFromString(bgXmlStr, "application/xml");
+
+                    if (textDoc.getElementsByTagName("parsererror").length > 0) {
+                        throw new Error(`解析文字檔 XML 失敗: ${textSlidePath}`);
+                    }
+
+                    const textSpTree = getSpTree(textDoc);
+                    const bgSpTree = getSpTree(bgDoc);
+
+                    if (textSpTree && bgSpTree) {
+                        const textChildren = Array.from(textSpTree.childNodes);
+                        let addedCount = 0;
+
+                        textChildren.forEach(node => {
+                            const localName = node.localName || node.nodeName.split(':').pop();
+                            const allowedTags = ['sp', 'grpSp', 'graphicFrame', 'pic'];
+                            if (allowedTags.includes(localName)) {
+                                try {
+                                    const clonedNode = bgDoc.importNode(node, true);
+                                    const cNvPr = clonedNode.getElementsByTagName ?
+                                        (clonedNode.getElementsByTagName("p:cNvPr")[0] || clonedNode.getElementsByTagName("cNvPr")[0]) : null;
+                                    if (cNvPr && cNvPr.getAttribute("id")) {
+                                        cNvPr.setAttribute("id", cNvPr.getAttribute("id") + "999");
+                                    }
+                                    bgSpTree.appendChild(clonedNode);
+                                    addedCount++;
+                                } catch (e) {
+                                    console.warn("Node import failed", e);
+                                }
+                            }
+                        });
+                        addMergeLog(`第 ${i + 1} 頁: 合併了 ${addedCount} 個物件`);
+                    } else {
+                        addMergeLog(`第 ${i + 1} 頁: 找不到內容結構，跳過`);
+                    }
+
+                    const newBgXmlStr = serializer.serializeToString(bgDoc);
+                    bgContent.file(bgSlidePath, newBgXmlStr);
+                }
+
+                addMergeLog('正在打包新檔案...');
+                const content = await bgContent.generateAsync({ type: "blob" });
+                mergeDownloadUrl = URL.createObjectURL(content);
+
+                addMergeLog('處理完成！');
+                showToast('PPTX 合併成功！');
+
+                mergeDownloadBtn.classList.remove('hidden');
+                mergeResetBtn.classList.remove('hidden');
+                mergeStartBtn.classList.add('hidden');
+
+            } catch (err) {
+                console.error(err);
+                addMergeLog(`錯誤: ${err.message}`);
+                showToast('合併失敗: ' + err.message, true);
+            } finally {
+                mergeLoader.classList.add('hidden');
+                mergeBtnText.textContent = '開始合併';
+                mergeStartBtn.disabled = false;
+            }
+        };
+
+        mergeDownloadBtn.onclick = () => {
+            if (mergeDownloadUrl) {
+                const a = document.createElement('a');
+                a.href = mergeDownloadUrl;
+                a.download = 'merged_presentation.pptx';
+                a.click();
+            }
+        };
+
+        mergeResetBtn.onclick = () => {
+            mergeTextFile = null;
+            mergeBgFile = null;
+            mergeDownloadUrl = null;
+            mergeLogs.innerHTML = '';
+            mergeLogContainer.classList.add('hidden');
+            mergeDownloadBtn.classList.add('hidden');
+            mergeResetBtn.classList.add('hidden');
+            mergeStartBtn.classList.remove('hidden');
+            updateMergeUI();
+        };
     </script>
 </body>
 </html>
