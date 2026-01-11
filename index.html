@@ -124,14 +124,19 @@
                             <button id="select-all-btn" class="text-xs font-black text-blue-600 hover:text-blue-800 px-2">全選</button>
                             <button id="deselect-all-btn" class="text-xs font-black text-slate-400 hover:text-slate-600 px-2">取消全選</button>
                         </div>
-                        <div class="flex flex-wrap gap-2">
-                            <!-- 備用下載按鈕 -->
-                            <button id="backup-pdf-pptx-btn" class="hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl font-black text-xs shadow-lg transition flex items-center gap-2">
-                                <span>備用下載 (最後生成)</span>
-                            </button>
+                        <div class="flex flex-wrap gap-2 items-center">
                             <button id="pdf-to-pptx-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl font-black text-xs shadow-lg transition flex items-center gap-2">
                                 <span id="pptx-btn-text">視覺還原 PPTX</span>
                                 <div id="pptx-loader" class="loader !w-3 !h-3 !border-white !border-t-transparent hidden"></div>
+                            </button>
+                            <!-- 完成後顯示的按鈕 -->
+                            <button id="send-to-step3-text-btn" class="hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl font-black text-xs shadow-lg transition flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                                傳送至 Step 3
+                            </button>
+                            <button id="download-pdf-pptx-btn" class="hidden bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-xl font-black text-xs shadow-lg transition flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                下載
                             </button>
                             <button id="clear-pdf-btn" class="text-xs font-black text-red-500 px-4 hover:underline">清除</button>
                         </div>
@@ -163,7 +168,14 @@
                             <span class="text-[10px] font-black text-slate-400 uppercase">自定義檔名</span>
                         </label>
                         <input type="text" id="pptx-filename-input" placeholder="簡報名稱..." class="hidden text-xs border border-slate-200 rounded-lg px-2 py-1 outline-none w-32 font-bold">
-                        <button id="export-results-pptx-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg">導出結果 PPTX</button>
+                        <button id="send-to-step3-bg-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                            傳送至 Step 3 (背景檔)
+                        </button>
+                        <button id="export-results-pptx-btn" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            下載 PPTX
+                        </button>
                     </div>
                     <div class="flex items-center gap-4 bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-100">
                         <div class="flex items-center gap-2">
@@ -214,6 +226,7 @@
                             <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
+                            <span id="merge-text-source" class="text-[10px] font-black text-purple-500 uppercase hidden">來自 Step 1</span>
                             <p id="merge-text-name" class="text-sm font-bold text-slate-700 break-all max-w-full"></p>
                         </div>
                     </div>
@@ -241,6 +254,7 @@
                             <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
+                            <span id="merge-bg-source" class="text-[10px] font-black text-purple-500 uppercase hidden">來自 Step 2</span>
                             <p id="merge-bg-name" class="text-sm font-bold text-slate-700 break-all max-w-full"></p>
                         </div>
                     </div>
@@ -377,12 +391,13 @@
         const pdfRatioSelect = document.getElementById('pdf-ratio-select');
         const workRatioSelect = document.getElementById('work-ratio-select');
         const toast = document.getElementById('toast');
-        const backupPdfPptxBtn = document.getElementById('backup-pdf-pptx-btn');
         let currentPdfPageUrls = [];
         let selectedPdfPages = new Set(); // 追蹤選取的頁面索引
         let slots = [];
         let lastGeneratedPdfPptx = null; // 存儲最後一次生成的 PPTX 物件
+        let lastGeneratedPdfPptxBlob = null; // 存儲 PPTX blob
         let lastPdfFileName = "";
+        let lastStep2PptxBlob = null; // 存儲 Step 2 生成的背景 PPTX blob
 
         function updateSelectedCount() {
             const count = selectedPdfPages.size;
@@ -582,27 +597,69 @@
                     }
                     await wait(1800);
                 }
-                const name = `Restore_${lastPdfFileName || Date.now()}`;
-                pptx.writeFile({ fileName: `${name}.pptx` });
-
-                // 保存備用下載
+                // 生成 blob 但不自動下載
                 lastGeneratedPdfPptx = pptx;
-                backupPdfPptxBtn.classList.remove('hidden');
+                lastGeneratedPdfPptxBlob = await pptx.write({ outputType: 'blob' });
 
-                showToast(`PPTX 重建成功！共 ${pagesToProcess.length} 頁`);
+                // 顯示操作按鈕
+                document.getElementById('send-to-step3-text-btn').classList.remove('hidden');
+                document.getElementById('download-pdf-pptx-btn').classList.remove('hidden');
+
+                showToast(`PPTX 重建成功！共 ${pagesToProcess.length} 頁，請選擇下載或傳送至 Step 3`);
             } catch (err) {
                 console.error(err);
                 showToast(`辨識出錯: ${err.message}`, true);
             }
             finally { btn.disabled = false; ldr.classList.add('hidden'); txt.textContent = '視覺還原 PPTX'; }
         };
-        // 備用下載按鈕邏輯
-        backupPdfPptxBtn.onclick = () => {
-            if (lastGeneratedPdfPptx) {
-                const name = `Restore_Backup_${Date.now()}`;
-                lastGeneratedPdfPptx.writeFile({ fileName: `${name}.pptx` });
-                showToast('備用下載已啟動');
+        // Step 1: 下載 PPTX 按鈕
+        document.getElementById('download-pdf-pptx-btn').onclick = () => {
+            if (lastGeneratedPdfPptxBlob) {
+                const name = `Restore_${lastPdfFileName || Date.now()}.pptx`;
+                const url = URL.createObjectURL(lastGeneratedPdfPptxBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('PPTX 已下載');
             }
+        };
+
+        // Step 1: 傳送至 Step 3 (文字檔)
+        document.getElementById('send-to-step3-text-btn').onclick = () => {
+            if (lastGeneratedPdfPptxBlob) {
+                const fileName = `Restore_${lastPdfFileName || Date.now()}.pptx`;
+                mergeTextFile = new File([lastGeneratedPdfPptxBlob], fileName, { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+                mergeTextFile._fromStep = 1; // 標記來源
+                updateMergeUI();
+                showToast('已傳送至 Step 3 作為文字檔');
+                // 滾動到 Step 3
+                document.getElementById('merge-text-drop').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+
+        // Step 2: 傳送至 Step 3 (背景檔)
+        document.getElementById('send-to-step3-bg-btn').onclick = async () => {
+            const results = slots.filter(s => s.resultImg.src.startsWith('data:image'));
+            if (results.length === 0) {
+                showToast('沒有可傳送的結果', true);
+                return;
+            }
+
+            // 生成背景 PPTX
+            const pptx = new PptxGenJS();
+            setPptxLayout(pptx, workRatioSelect.value);
+            results.forEach(s => pptx.addSlide().addImage({ data: s.resultImg.src, x: 0, y: 0, w: '100%', h: '100%' }));
+
+            const blob = await pptx.write({ outputType: 'blob' });
+            const fileName = `Background_${Date.now()}.pptx`;
+            mergeBgFile = new File([blob], fileName, { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+            mergeBgFile._fromStep = 2; // 標記來源
+            updateMergeUI();
+            showToast('已傳送至 Step 3 作為背景檔');
+            // 滾動到 Step 3
+            document.getElementById('merge-bg-drop').scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
         async function callAiOcr(base64) {
             const prompt = `請辨識圖片中「所有」文字區塊。JSON 格式包含：text, box_2d [ymin, xmin, ymax, xmax], font_size, is_bold, align, color。座標比例 0-1000。`;
@@ -764,8 +821,10 @@
             selectedPdfPages.clear();
             pdfPreviewContainer.classList.add('hidden'); pdfControls.classList.add('hidden');
             document.getElementById('pdf-empty-state').classList.remove('hidden');
-            backupPdfPptxBtn.classList.add('hidden');
+            document.getElementById('send-to-step3-text-btn').classList.add('hidden');
+            document.getElementById('download-pdf-pptx-btn').classList.add('hidden');
             lastGeneratedPdfPptx = null;
+            lastGeneratedPdfPptxBlob = null;
         };
         document.getElementById('master-drop-zone').onclick = (e) => { document.getElementById('master-file-input').click(); };
         document.getElementById('master-file-input').onchange = (e) => {
@@ -812,18 +871,36 @@
                 document.getElementById('merge-text-empty').classList.add('hidden');
                 document.getElementById('merge-text-loaded').classList.remove('hidden');
                 document.getElementById('merge-text-name').textContent = mergeTextFile.name;
+                // 顯示來源
+                const textSource = document.getElementById('merge-text-source');
+                if (mergeTextFile._fromStep === 1) {
+                    textSource.textContent = '來自 Step 1';
+                    textSource.classList.remove('hidden');
+                } else {
+                    textSource.classList.add('hidden');
+                }
             } else {
                 document.getElementById('merge-text-empty').classList.remove('hidden');
                 document.getElementById('merge-text-loaded').classList.add('hidden');
+                document.getElementById('merge-text-source').classList.add('hidden');
             }
             // 背景檔
             if (mergeBgFile) {
                 document.getElementById('merge-bg-empty').classList.add('hidden');
                 document.getElementById('merge-bg-loaded').classList.remove('hidden');
                 document.getElementById('merge-bg-name').textContent = mergeBgFile.name;
+                // 顯示來源
+                const bgSource = document.getElementById('merge-bg-source');
+                if (mergeBgFile._fromStep === 2) {
+                    bgSource.textContent = '來自 Step 2';
+                    bgSource.classList.remove('hidden');
+                } else {
+                    bgSource.classList.add('hidden');
+                }
             } else {
                 document.getElementById('merge-bg-empty').classList.remove('hidden');
                 document.getElementById('merge-bg-loaded').classList.add('hidden');
+                document.getElementById('merge-bg-source').classList.add('hidden');
             }
             // 按鈕狀態
             mergeStartBtn.disabled = !(mergeTextFile && mergeBgFile);
